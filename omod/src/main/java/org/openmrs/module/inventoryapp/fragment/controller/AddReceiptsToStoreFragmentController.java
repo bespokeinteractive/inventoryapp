@@ -3,13 +3,13 @@ package org.openmrs.module.inventoryapp.fragment.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.openmrs.Role;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.hospitalcore.InventoryCommonService;
-import org.openmrs.module.hospitalcore.model.InventoryDrug;
-import org.openmrs.module.hospitalcore.model.InventoryDrugCategory;
-import org.openmrs.module.hospitalcore.model.InventoryDrugFormulation;
-import org.openmrs.module.hospitalcore.model.InventoryStoreDrugTransactionDetail;
+import org.openmrs.module.hospitalcore.model.*;
+import org.openmrs.module.hospitalcore.util.ActionValue;
 import org.openmrs.module.inventory.InventoryService;
+import org.openmrs.module.inventory.model.InventoryStoreDrug;
 import org.openmrs.module.inventory.util.DateUtils;
 import org.openmrs.module.inventoryapp.global.StoreSingleton;
 import org.openmrs.module.inventoryapp.model.DrugInformation;
@@ -157,6 +157,7 @@ public class AddReceiptsToStoreFragmentController {
 
         int userId = Context.getAuthenticatedUser().getId();
         String fowardParam = "reipt_"+userId;
+
         List<InventoryStoreDrugTransactionDetail> list = (List<InventoryStoreDrugTransactionDetail> )StoreSingleton.getInstance().getHash().get(fowardParam);
         if(list == null){
             list = new ArrayList<InventoryStoreDrugTransactionDetail>();
@@ -164,5 +165,72 @@ public class AddReceiptsToStoreFragmentController {
         list.add(transactionDetail);
         StoreSingleton.getInstance().getHash().put(fowardParam, list);
 
+
+        String description = "";
+
+        Date date = new Date();
+        //	InventoryStore store = inventoryService.getStoreByCollectionRole(new ArrayList<Role>(Context.getAuthenticatedUser().getAllRoles()));;
+        List <Role>role=new ArrayList<Role>(Context.getAuthenticatedUser().getAllRoles());
+
+        InventoryStoreRoleRelation srl=null;
+        Role rl = null;
+        for(Role r: role){
+            if(inventoryService.getStoreRoleByName(r.toString())!=null){
+                srl = inventoryService.getStoreRoleByName(r.toString());
+                rl=r;
+            }
+        }
+        InventoryStore store =null;
+        if(srl!=null){
+            store = inventoryService.getStoreById(srl.getStoreid());
+
+        }
+        InventoryStoreDrugTransaction transaction = new InventoryStoreDrugTransaction();
+        transaction.setDescription(description);
+        transaction.setCreatedOn(date);
+        transaction.setStore(store);
+        transaction.setTypeTransaction(ActionValue.TRANSACTION[0]);
+        transaction.setCreatedBy(Context.getAuthenticatedUser().getGivenName());
+        transaction = inventoryService.saveStoreDrugTransaction(transaction);
+
+
+        if(drugInformationList != null && drugInformationList.size() > 0){
+            for(int i=0;i< list.size();i++){
+                InventoryStoreDrugTransactionDetail transactionSDetail = list.get(i);
+                //save total first
+                //System.out.println("transactionDetail.getDrug(): "+transactionDetail.getDrug());
+                //System.out.println("transactionDetail.getFormulation(): "+transactionDetail.getFormulation());
+                InventoryStoreDrug storeDrug = inventoryService.getStoreDrug(store.getId(), transactionSDetail.getDrug().getId(), transactionSDetail.getFormulation().getId());
+                if(storeDrug == null){
+                    storeDrug = new InventoryStoreDrug();
+                    storeDrug.setCurrentQuantity(transactionSDetail.getQuantity());
+                    storeDrug.setReceiptQuantity(transactionSDetail.getQuantity());
+                    storeDrug.setDrug(transactionSDetail.getDrug());
+                    storeDrug.setFormulation(transactionSDetail.getFormulation());
+                    storeDrug.setStore(store);
+                    storeDrug.setStatusIndent(0);
+                    storeDrug.setReorderQty(0);
+                    storeDrug.setOpeningBalance(0);
+                    storeDrug.setClosingBalance(transactionSDetail.getQuantity());
+                    storeDrug.setStatus(0);
+                    storeDrug.setReorderQty(transactionSDetail.getDrug().getReorderQty());
+                    storeDrug = inventoryService.saveStoreDrug(storeDrug);
+
+                }else{
+                    storeDrug.setOpeningBalance(storeDrug.getClosingBalance());
+                    storeDrug.setClosingBalance(storeDrug.getClosingBalance()+transactionSDetail.getQuantity());
+                    storeDrug.setCurrentQuantity(storeDrug.getCurrentQuantity() + transactionSDetail.getQuantity());
+                    storeDrug.setReceiptQuantity(transactionSDetail.getQuantity());
+                    storeDrug.setReorderQty(transactionSDetail.getDrug().getReorderQty());
+                    storeDrug = inventoryService.saveStoreDrug(storeDrug);
+                }
+                //save transactionDetail
+                transactionSDetail.setOpeningBalance(storeDrug.getOpeningBalance());
+                transactionSDetail.setClosingBalance(storeDrug.getClosingBalance());
+                transactionSDetail.setTransaction(transaction);
+                inventoryService.saveStoreDrugTransactionDetail(transactionSDetail);
+            }
+            StoreSingleton.getInstance().getHash().remove(fowardParam);
+        }
     }
 }
