@@ -1,3 +1,4 @@
+
 <script>
     var receiptsDataString;
     jq(function () {
@@ -66,3 +67,5 @@
     <td data-bind="text: createdOn"></td>
     </tbody>
 </table>
+
+<a href="addReceiptsToGeneralStore.page">Add Receipts</a>
