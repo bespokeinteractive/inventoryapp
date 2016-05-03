@@ -1,6 +1,7 @@
 <script>
     var pDataString;
 	var list;
+    var toReturn;
     jq(function(){
         var pData = getStockBalance();
         pDataString = JSON.stringify(pData);
@@ -23,41 +24,44 @@
         }
 		
 		jq("#stockCategoryId").on("change", function () {
-            fetchExpiryData();
+            var categoryId	= jq("#stockCategoryId").val();
+            var drugName = jq("#stockDrugName").val();
+            var stockList =  getStockBalance(categoryId,drugName);
+            list.stockItems(stockList);
         });
 
-        jq("#stockDrugName").on("blur", function () {
-            fetchExpiryData();
+        jq("#stockDrugName").on("change", function () {
+            var categoryId	= jq("#stockCategoryId").val();
+            var drugName = jq("#stockDrugName").val();
+            var dName = getStockBalance(categoryId,drugName);
+            list.stockItems(dName);
         });
-		
-		jq('#stockSearch').click(function(){
-			fetchExpiryData();
-		});
-		
-		jq('#stockDrugName').keydown(function (e) {
+
+		/*jq('#stockDrugName').keydown(function (e) {
 			var key = e.keyCode || e.which;
 			if ((key == 9 || key == 13) && jq(this).attr('id') != 'searchPhrase') {
-				fetchExpiryData();
+                var drugName = jq("#stockDrugName").val();
+                var dName = getStockBalance(drugName);
+                list.stockItems(dName);
 			}
-		}); 
+		})*/;
 
         list = new StockListView();
         ko.applyBindings(list, jq("#stocklist")[0]);
     });
-	
-	function fetchExpiryData(){
-		//this is the fuction that gets the parameters and initialize the search procedure
-		jq().toastmessage('showErrorToast', "Functionality Not Linked up Yet.");
-	}
-	
-    function getStockBalance() {
-        var toReturn;
+
+
+    function getStockBalance(categoryId,drugName) {
         jQuery.ajax({
             type: "GET",
             url: '${ui.actionLink("inventoryapp", "stockBalance", "fetchStockBalance")}',
             dataType: "json",
             global: false,
             async: false,
+            data: {
+                categoryId:categoryId,
+                drugName:drugName
+            },
             success: function (data) {
                 toReturn = data;
             }
@@ -85,10 +89,7 @@
 				
 				<label for="stockDrugName">&nbsp; &nbsp;Name:</label>
 				<input id="stockDrugName" type="text" value="" name="stockDrugName" placeholder=" Drug Name">
-				
-				<a class="button task" id="stockSearch">
-					Search
-				</a>
+
 			</div>
 			
 			
