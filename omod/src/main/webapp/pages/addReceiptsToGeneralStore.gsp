@@ -243,45 +243,52 @@
 				});
             });
 
-            jq("#drugName").on("change",function(e){
-                var drugName = jq(this).children(":selected").attr("name");
-                var drugFormulationData = "<option id='0'>Select Formulation</option>";
-				
-				jq('#drugFormulation').empty();
-				
-                jq.getJSON('${ ui.actionLink("inventoryapp", "AddReceiptsToStore", "getFormulationByDrugName") }',{
-                            drugName:drugName
-                        })
-                        .success(function(data) {
-                            for (var key in data) {
-                                if (data.hasOwnProperty(key)) {
-                                    var val = data[key];
-                                    for (var i in val) {
-									var name,dosage;
-                                        if (val.hasOwnProperty(i)) {
-                                            var j = val[i];
-                                            if(i=="id")
-                                            {
-                                               drugFormulationData=drugFormulationData + '<option id="'+j+'">';
-                                            }
-													else if (i == "name") {
-											   name = j;
-										   }
-										   else {
-											   dozage = j;
-											   drugFormulationData = drugFormulationData + (name + "-" + dozage) + '</option>';
-										   }
-                                        }
-                                    }
-                                }
-                            }
-                            jq(drugFormulationData).appendTo("#drugFormulation");
-                        })
-                        .error(function(xhr, status, err) {
-                            alert('AJAX error ' + err);
-                        });
-            });
-
+			//add drug autocomplete
+			jq("#drugName").on("focus.autocomplete", function () {
+				var selectedInput = this;
+				jq(this).autocomplete({
+					source: function( request, response ) {
+						jq.getJSON('${ ui.actionLink("inventoryapp", "AddReceiptsToStore", "searchDrugNames") }',
+								{
+									q: request.term
+								}
+						).success(function(data) {
+							var results = [];
+							for (var i in data) {
+								var result = { label: data[i].name, value: data[i]};
+								results.push(result);
+							}
+							response(results);
+						});
+					},
+					minLength: 3,
+					select: function( event, ui ) {
+						event.preventDefault();
+						jq(selectedInput).val(ui.item.label);
+					},
+					change: function (event, ui) {
+						event.preventDefault();
+						jq(selectedInput).val(ui.item.label);
+						var categoryId = ui.item.value.category.id;
+						jq("#drugCategory option[id=" +categoryId+"]").attr('selected','selected');
+						jq.getJSON('${ ui.actionLink("inventoryapp", "AddReceiptsToStore", "getFormulationByDrugName") }',
+								{
+									"drugName": ui.item.label
+								}
+						).success(function(data) {
+							var formulations = jq.map(data, function (formulation) {
+								jq('#drugFormulation').append(jq('<option>').text(formulation.name +"-"+ formulation.dozage).attr('value', formulation.id));
+							});
+						});
+					},
+					open: function() {
+						jq( this ).removeClass( "ui-corner-all" ).addClass( "ui-corner-top" );
+					},
+					close: function() {
+						jq( this ).removeClass( "ui-corner-top" ).addClass( "ui-corner-all" );
+					}
+				});
+			});
 			jq("#addDrugsSubmitButton").click(function(event) {
 				addDescriptionDialog.show();
 			});
@@ -789,12 +796,11 @@
                     <% } %>
                 </select>
             </li>
-            <li>
-                <label for="drugName">Drug Name<span>*</span></label>
-                <select name="drugName" id="drugName" >
-                    <option id="0">Select Drug</option>
-                </select>
-            </li>
+			<li>
+				<label for="drugName">Drug Name<span>*</span></label>
+				<input type="text" name="drugName" id="drugName">
+			</li>
+
             <li>
                 <label for="drugFormulation">Formulation<span>*</span></label>
                 <select name="drugFormulation" id="drugFormulation" >
