@@ -33,6 +33,10 @@
 							jq().toastmessage('showErrorToast', 'Ensure fields marked in Red are filled properly');
 							return false;
 						}
+
+						if(!compare_DOE_DOM_DOR(jq("#dateOfExpiry-field").val(),jq("#dateOfManufacture-field").val(),jq("#receiptDate-field").val())){
+							return false;
+						}
 					
                         var tbody = jq('#addDrugsTable').children('tbody');
                         var table = tbody.length ? tbody : jq('#addDrugsTable');
@@ -55,12 +59,13 @@
                                     costToThePatient:jq("#costToThePatient").val(),
                                     batchNo:jq("#batchNo").val(),
                                     companyName:jq("#companyName").val(),
-                                    dateOfManufacture:jq("#dateOfManufacture").val(),
+                                    dateOfManufacture:jq("#dateOfManufacture-field").val(),
                                     dateOfExpiry:jq("#dateOfExpiry-field").val(),
                                     receiptDate:jq("#receiptDate-field").val(),
-                                    receiptFrom:jq("#receiptFrom-field").val()
+                                    receiptFrom:jq("#receiptFrom").val()
                                 }
                         );
+
                         adddrugdialog.close();
                     },
                     cancel: function() {
@@ -197,8 +202,6 @@
 				jq('#drugCategory').change();
 			}
 			
-
-
 
             jq("#addDrugsButton").on("click", function(e){
 				resets();
@@ -355,6 +358,39 @@
 		function editorFunction(rowId) {
 			//editor logic
 		}
+		function stringToDateConvert(stringDate)
+		{
+			var parts = stringDate.split('-');
+			return Date.parse(new Date(parts[0], parts[1]-1, parts[2]));
+		}
+
+		function compare_DOE_DOM_DOR(dateOfExpiryString, dateOfManufactureString, dateOfReceiptString){
+			console.log("Method has been called");
+			console.log("Date of Expiry");
+			console.log(dateOfExpiryString);
+			console.log(dateOfManufactureString);
+			console.log("Date of Receipt");
+			console.log(dateOfReceiptString);
+			dateOfManufacture = stringToDateConvert(dateOfManufactureString);
+			dateOfExpiry = stringToDateConvert(dateOfExpiryString);
+			dateOfReceipt = stringToDateConvert(dateOfReceiptString);
+
+			if(dateOfManufacture > dateOfExpiry){
+				jq().toastmessage('showErrorToast', 'Please review date of manufacture is greater than date of expiry');
+				return false;
+			}
+			else if(dateOfReceipt > dateOfExpiry){
+				jq().toastmessage('showErrorToast', 'Please review receipt date is greater than date of expiry');
+				return false;
+			}
+			else if(dateOfManufacture > dateOfReceipt){
+				jq().toastmessage('showErrorToast', 'Please review date of manufacture is greater than receipt date');
+				return false;
+			}else{
+				return true;
+			}
+		}
+
     </script>
 
     <style>
