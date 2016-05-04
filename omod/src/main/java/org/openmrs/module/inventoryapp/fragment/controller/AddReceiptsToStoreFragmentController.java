@@ -90,6 +90,7 @@ public class AddReceiptsToStoreFragmentController {
 
         int formulation = drugInformation.getDrugFormulationId();
         int drugId = drugInformation.getDrugId();
+        String drugName = drugInformation.getDrugName();
         int quantity = drugInformation.getQuantity();
         String unitPriceStr = drugInformation.getUnitPrice();
         String costToPatientStr = drugInformation.getCostToThePatient();
@@ -102,7 +103,7 @@ public class AddReceiptsToStoreFragmentController {
         List<String> errors = new ArrayList<String>();
         InventoryDrug drug = null;
         List<InventoryDrugCategory> listCategory = inventoryService.findDrugCategory("");
-        drug = inventoryService.getDrugById(drugId);
+        drug = inventoryService.getDrugByName(drugName);
 
         if (drug == null) {
             errors.add("inventory.receiptDrug.drug.required");
@@ -147,14 +148,16 @@ public class AddReceiptsToStoreFragmentController {
         transactionDetail.setCostToPatient(costToPatient);
         transactionDetail.setIssueQuantity(0);
         transactionDetail.setCreatedOn(new Date());
-        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         try {
             transactionDetail.setDateExpiry(formatter.parse(dateExpiry+" 23:59:59"));
+            transactionDetail.setDateManufacture(formatter.parse(dateManufacture + " 23:59:59"));
+            transactionDetail.setReceiptDate(formatter.parse(receiptDate + " 23:59:59"));
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        transactionDetail.setDateManufacture(DateUtils.getDateFromStr(dateManufacture));
-        transactionDetail.setReceiptDate(DateUtils.getDateFromStr(receiptDate));
+
+
 
         //Sagar Bele : Date - 22-01-2013 Issue Number 660 : [Inventory] Add receipt from field in Table and front end
         transactionDetail.setReceiptFrom(receiptFrom);

@@ -48,9 +48,9 @@
                                 {
                                     rowId: index,
                                     drugCategoryId: jq("#drugCategory").children(":selected").attr("id"),
-                                    drugCategoryName: jq("#drugCategory").children(":selected").val(),
-                                    drugId: jq("#drugName").children(":selected").attr("id"),
-                                    drugName: jq("#drugName").children(":selected").val(),
+									drugCategoryName: jq("#drugCategory").children(":selected").val(),
+                                    drugId: 0,
+                                    drugName: jq("#drugName").val(),
                                     drugFormulationId: jq("#drugFormulation").children(":selected").attr("id"),
                                     drugFormulationName: jq("#drugFormulation").children(":selected").val(),
                                     quantity: jq("#quantity").val(),
@@ -277,7 +277,7 @@
 								}
 						).success(function(data) {
 							var formulations = jq.map(data, function (formulation) {
-								jq('#drugFormulation').append(jq('<option>').text(formulation.name +"-"+ formulation.dozage).attr('value', formulation.id));
+								jq('#drugFormulation').append(jq('<option>').text(formulation.name +"-"+ formulation.dozage).attr('id', formulation.id));
 							});
 						});
 					},
