@@ -22,7 +22,7 @@
 
 <script>
 
-    jQuery(document).ready(function () {
+    jq(document).ready(function () {
         function print() {
             var printDiv = jQuery("#print").html();
             var printWindow = window.open('', '', 'height=400,width=800');
@@ -33,7 +33,7 @@
             printWindow.print();
         }
 
-        jQuery("#printButton").on("click", function (e) {
+        jq("#printButton").on("click", function (e) {
             print().show();
         });
     });
@@ -266,16 +266,74 @@ form input:focus, form select:focus, form textarea:focus, form ul.select:focus, 
     </div>
 
     <% } else { %>
-    <div class='hide'>
-        <br/>
-        <br/>
-        <center style="float:center;font-size: 2.2em">Indent From ${store.name}</center>
-        <br/>
-        <br/>
-        <span style="float:right;font-size: 1.7em">Date: ${date}</span>
-        <br/>
-        <br/>
-    </div>
+        <div class='hide'>
+			<br/>
+			<br/>
+			<center style="float:center;font-size: 2.2em">Indent From ${store.name}</center>
+			<br/>
+			<br/>
+			<span style="float:right;font-size: 1.7em">Date: ${date}</span>
+			<br/>
+			<br/>
+		</div>
+		
+        <table id="nullsOut">
+			<thead>
+				<tr>
+					<th>#</th>
+					<th>CATEGORY</th>
+					<th>DRUG NAME</th>
+					<th>FORMULATION</th>
+					<th>INDENT</th>
+					<th>TRANSFER</th>
+					<th>BATCH#</th>
+					<th>EXPIRY</th>
+					<th>COMPANY</th>
+				</tr>
+			</thead>
+
+                <% if (listIndentDetail != null && listIndentDetail.size() > 0) { %>
+                    <% listIndentDetail.eachWithIndex { indent, varStatus -> %>
+                        <tr>
+                        <td>${varStatus+1}</td>
+                        <td>${indent.drug.category.name}</td>
+                        <td>${indent.drug.name}</td>
+                        <td>${indent.formulation.name}-${indent.formulation.dozage}</td>
+                        <td>${indent.quantity}</td>
+
+                        <% def count=0 %>
+                        <% def check=0 %>
+                        <% listTransactionDetail.each { trDetail, varIndex ->  %>
+                            <% if (trDetail.drug.id == indent.drug.id && trDetail.formulation.id == indent.formulation.id) { %>
+                                <% check=1 %>
+
+                                    <% if (count > 0) { %>
+                                            <td>${trDetail.issueQuantity}</td>
+                                            <td>${trDetail.batchNo}</td>
+                                            <td>${ui.formatDatePretty(trDetail.dateExpiry)}</td>
+                                            <td>${trDetail.companyName}</td>
+                                        </tr>
+                                    <% } else {%>
+											<td>${trDetail.issueQuantity}</td>
+											<td>${trDetail.batchNo}</td>
+											<td>${ui.formatDatePretty(trDetail.dateExpiry)}</td>
+											<td>${trDetail.companyName}</td>
+                                        </tr>
+                                    <% } %>
+
+
+                                <% count=count + 1 %>
+                            <% } %>
+                        <% } %>
+                        <% if (check == 0){ %>
+                            <td>0</td>
+                            <td>N/A</td>
+                            <td>N/A</td>
+                            <td>N/A</td>
+                            </tr>
+                        <% } %>
+                    <% } %>
+                <% } %>
 
     <table id="nullsOut">
         <thead>
