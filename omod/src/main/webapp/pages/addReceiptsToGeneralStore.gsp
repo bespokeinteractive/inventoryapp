@@ -887,10 +887,10 @@
 		<h3>ADD Description</h3>
 	</div>
 	<form class="dialog-content">
-		<textarea id="addReceiptsDescription"></textarea>
+		<textarea id="addReceiptsDescription" resize: none; height: 70px; width: 418px; margin-bottom: 10px;></textarea>
 
 		<span class="button cancel"> Cancel </span>
-		<span class="button confirm right" > Submit </span>
+		<span class="button confirm right" style="margin-right: 0px"> Submit </span>
 	</form>
 </div>
 
