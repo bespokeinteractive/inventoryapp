@@ -264,11 +264,11 @@
 					minLength: 3,
 					select: function( event, ui ) {
 						event.preventDefault();
-						jq(selectedInput).val(ui.item.label);
+						jq(this).val(ui.item.label);
 					},
 					change: function (event, ui) {
 						event.preventDefault();
-						jq(selectedInput).val(ui.item.label);
+						jq(this).val(ui.item.label);
 						var categoryId = ui.item.value.category.id;
 						jq("#drugCategory option[id=" +categoryId+"]").attr('selected','selected');
 						jq.getJSON('${ ui.actionLink("inventoryapp", "AddReceiptsToStore", "getFormulationByDrugName") }',
@@ -701,7 +701,7 @@
 			font-size: 12px;
 			margin-top: 8px;
 		}
-		#footer input{
+		#footer .task{
 			float: right;
 		}
     </style>
@@ -736,7 +736,13 @@
             <h1 class="name" style="border-bottom: 1px solid #ddd;">
                 <span>ADD RECEIPTS TO GENERAL STORE &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>
             </h1>
+			
         </div>
+		
+		<span class="button confirm right" id="addDrugsButton">
+			<i class="icon-plus-sign small"></i>
+			Add to Slip
+		</span>
 
         <div id="addDrugsTablePrintable">
             <table id="addDrugsTable">
@@ -769,10 +775,20 @@
 			<img src="../ms/uiframework/resource/inventoryapp/images/tooltip.jpg" />
 			<span>Place the mouse over the Titles to get the meaning in full</span>
 			
-            <input type="button" value="Submit" class="button task" name="addDrugsSubmitButton" id="addDrugsSubmitButton" style="margin-right:0px;"/>
-			<input type="button" value="Add" class="button confirm" name="addDrugsButton" id="addDrugsButton"/>
-			<input type="button" value="Clear Slip" onclick="clearSlip()" class="button cancel" name="clearSlip" id="clearSlip"/>
-			<input type="button" value="Print Slip" onclick="printSlip()" class="button task" name="printSlip" id="printSlip"/>
+            <div class="button task" id="addDrugsSubmitButton">
+				<i class="icon-save small"></i>
+				Finish
+			</div>
+			
+			<div class="button task" onclick="printSlip()" id="printSlip" style="margin-right:5px;">
+				<i class="icon-print small"></i>
+				Print
+			</div>
+			
+			
+			<div class="button cancel" onclick="clearSlip()" id="clearSlip" style="margin-left:20px;">
+				Clear Slip
+			</div>
 		</div>
 
     </div>

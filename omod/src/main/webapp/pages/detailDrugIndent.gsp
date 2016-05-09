@@ -360,7 +360,7 @@ form input:focus, form select:focus, form textarea:focus, form ul.select:focus, 
             <td>${indent.quantity}</td>
 
             <% def count = 0 %>
-            <% def check = 0 %>
+            <% def check = 0 %>git 
             <% listTransactionDetail.each { trDetail -> %>
             <% if (trDetail.drug.id == indent.drug.id && trDetail.formulation.id == indent.formulation.id) { %>
             <% check = 1 %>
