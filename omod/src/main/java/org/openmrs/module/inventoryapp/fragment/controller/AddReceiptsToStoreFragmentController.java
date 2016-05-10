@@ -94,6 +94,7 @@ public class AddReceiptsToStoreFragmentController {
         int quantity = drugInformation.getQuantity();
         String unitPriceStr = drugInformation.getUnitPrice();
         String costToPatientStr = drugInformation.getCostToThePatient();
+        String companyName = drugInformation.getCompanyName();
         String batchNo = drugInformation.getBatchNo();
         String receiptFrom = drugInformation.getReceiptFrom();
         String dateManufacture = drugInformation.getDateOfManufacture();
@@ -115,7 +116,7 @@ public class AddReceiptsToStoreFragmentController {
         if (null != unitPriceStr && "" != unitPriceStr) {
             unitPrice = NumberUtils.createBigDecimal(unitPriceStr);
         }
-
+        
         if (!StringUtils.isBlank(dateManufacture)) {
             DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -141,6 +142,7 @@ public class AddReceiptsToStoreFragmentController {
         transactionDetail.setAttribute(drug.getAttributeName());
         transactionDetail.setReorderPoint(drug.getReorderQty());
         transactionDetail.setFormulation(inventoryService.getDrugFormulationById(formulation));
+        transactionDetail.setCompanyName(companyName);
         transactionDetail.setBatchNo(batchNo);
         transactionDetail.setCurrentQuantity(quantity);
         transactionDetail.setQuantity(quantity);
