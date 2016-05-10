@@ -14,7 +14,7 @@
     jq(document).ready(function () {
 		var simple = ${transactionDetails};
 		var simpleObjects = simple.simpleObjects;
-		
+
 		updateQueueTable(simpleObjects);
 	
 		function print () {

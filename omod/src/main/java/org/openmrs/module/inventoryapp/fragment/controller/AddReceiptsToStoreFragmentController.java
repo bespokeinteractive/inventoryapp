@@ -31,26 +31,35 @@ import java.util.List;
  * Created by franqq on 3/21/16.
  */
 public class AddReceiptsToStoreFragmentController {
-    public List<SimpleObject> fetchDrugNames(@RequestParam(value = "categoryId") int categoryId, UiUtils uiUtils)
+    private InventoryService inventoryService;
+
+    public AddReceiptsToStoreFragmentController() {
+        inventoryService = (InventoryService) Context.getService(InventoryService.class);
+    }
+
+    public List<SimpleObject> searchDrugNames(@RequestParam(value = "q") String searchTerm, UiUtils uiUtils)
     {
+        List<InventoryDrug> drugs = inventoryService.findDrug(null,searchTerm);
+        return SimpleObject.fromCollection(drugs, uiUtils, "id", "name", "category.id");
+    }
+
+    public List<SimpleObject> fetchDrugNames(@RequestParam(value = "categoryId") int categoryId, UiUtils uiUtils) {
         List<SimpleObject> drugNames = null;
-        InventoryService inventoryService = (InventoryService) Context.getService(InventoryService.class);
-        if(categoryId > 0){
+        if (categoryId > 0) {
             List<InventoryDrug> drugs = inventoryService.findDrug(categoryId, null);
-            drugNames = SimpleObject.fromCollection(drugs,uiUtils,"id","name");
+            drugNames = SimpleObject.fromCollection(drugs, uiUtils, "id", "name");
         }
         return drugNames;
     }
 
-    public List<SimpleObject> getFormulationByDrugName(@RequestParam(value="drugName") String drugName,UiUtils ui)
-    {
+    public List<SimpleObject> getFormulationByDrugName(@RequestParam(value = "drugName") String drugName, UiUtils ui) {
 
         InventoryCommonService inventoryCommonService = (InventoryCommonService) Context.getService(InventoryCommonService.class);
         InventoryDrug drug = inventoryCommonService.getDrugByName(drugName);
 
         List<SimpleObject> formulationsList = null;
 
-        if(drug != null){
+        if (drug != null) {
             List<InventoryDrugFormulation> formulations = new ArrayList<InventoryDrugFormulation>(drug.getFormulations());
             formulationsList = SimpleObject.fromCollection(formulations, ui, "id", "name", "dozage");
         }
@@ -58,7 +67,7 @@ public class AddReceiptsToStoreFragmentController {
         return formulationsList;
     }
 
-    public List<DrugInformation> getPrescriptions(String json){
+    public List<DrugInformation> getPrescriptions(String json) {
         ObjectMapper mapper = new ObjectMapper();
         List<DrugInformation> list = null;
         try {
@@ -69,18 +78,19 @@ public class AddReceiptsToStoreFragmentController {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return  list;
+        return list;
     }
 
-    public void saveReceipt( @RequestParam(value = "drugOrder", required = false) String drugOrder,
-                             @RequestParam(value = "description", required = false) String description
-                             ) throws ParseException {
+    public void saveReceipt(@RequestParam(value = "drugOrder", required = false) String drugOrder,
+                            @RequestParam(value = "description", required = false) String description
+    ) throws ParseException {
 
         List<DrugInformation> drugInformationList = getPrescriptions(drugOrder);
         DrugInformation drugInformation = drugInformationList.get(0);
 
-        int formulation = drugInformation.getDrugFormulationId(); 
-        int drugId = drugInformation.getDrugId(); 
+        int formulation = drugInformation.getDrugFormulationId();
+        int drugId = drugInformation.getDrugId();
+        String drugName = drugInformation.getDrugName();
         int quantity = drugInformation.getQuantity();
         String unitPriceStr = drugInformation.getUnitPrice();
         String costToPatientStr = drugInformation.getCostToThePatient();
@@ -90,44 +100,39 @@ public class AddReceiptsToStoreFragmentController {
         String dateExpiry = drugInformation.getDateOfExpiry();
         String receiptDate = drugInformation.getReceiptDate();
 
-
         List<String> errors = new ArrayList<String>();
         InventoryDrug drug = null;
-        InventoryService inventoryService = (InventoryService) Context.getService(InventoryService.class);
         List<InventoryDrugCategory> listCategory = inventoryService.findDrugCategory("");
-        drug=inventoryService.getDrugById(drugId);
+        drug = inventoryService.getDrugByName(drugName);
 
-        if(drug == null){
+        if (drug == null) {
             errors.add("inventory.receiptDrug.drug.required");
         }
 
-        BigDecimal unitPrice  = new BigDecimal(0);
+        BigDecimal unitPrice = new BigDecimal(0);
 
         BigDecimal costToPatient = NumberUtils.createBigDecimal(costToPatientStr);
-        if(null!=unitPriceStr && ""!=unitPriceStr)
-        {
-            unitPrice =  NumberUtils.createBigDecimal(unitPriceStr);
+        if (null != unitPriceStr && "" != unitPriceStr) {
+            unitPrice = NumberUtils.createBigDecimal(unitPriceStr);
         }
 
-        if(!StringUtils.isBlank(dateManufacture)){
+        if (!StringUtils.isBlank(dateManufacture)) {
             DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
 
             Date dateManufac = dateFormatter.parse(dateManufacture);
             Date dateExpi = dateFormatter.parse(dateExpiry);
-            if(dateManufac.after(dateExpi)  ){
+            if (dateManufac.after(dateExpi)) {
                 errors.add("inventory.receiptDrug.manufacNeedLessThanExpiry");
             }
         }
 
         InventoryDrugFormulation formulationO = inventoryService.getDrugFormulationById(formulation);
-        if(formulationO == null)
-        {
+        if (formulationO == null) {
             errors.add("inventory.receiptDrug.formulation.required");
         }
         //InventoryDrug drug = inventoryService.getDrugById(drugId);
 
-        if(formulationO != null && drug != null && !drug.getFormulations().contains(formulationO))
-        {
+        if (formulationO != null && drug != null && !drug.getFormulations().contains(formulationO)) {
             errors.add("inventory.receiptDrug.formulation.notCorrect");
         }
 
@@ -146,11 +151,13 @@ public class AddReceiptsToStoreFragmentController {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         try {
             transactionDetail.setDateExpiry(formatter.parse(dateExpiry+" 23:59:59"));
-        }  catch (ParseException e) {
+            transactionDetail.setDateManufacture(formatter.parse(dateManufacture + " 23:59:59"));
+            transactionDetail.setReceiptDate(formatter.parse(receiptDate + " 23:59:59"));
+        } catch (ParseException e) {
             e.printStackTrace();
         }
-        transactionDetail.setDateManufacture(DateUtils.getDateFromStr(dateManufacture));
-        transactionDetail.setReceiptDate(DateUtils.getDateFromStr(receiptDate));
+
+
 
         //Sagar Bele : Date - 22-01-2013 Issue Number 660 : [Inventory] Add receipt from field in Table and front end
         transactionDetail.setReceiptFrom(receiptFrom);
@@ -166,7 +173,6 @@ public class AddReceiptsToStoreFragmentController {
 
         int userId = Context.getAuthenticatedUser().getId();
         String fowardParam = "reipt_"+userId;
-
         List<InventoryStoreDrugTransactionDetail> list = (List<InventoryStoreDrugTransactionDetail> )StoreSingleton.getInstance().getHash().get(fowardParam);
         if(list == null){
             list = new ArrayList<InventoryStoreDrugTransactionDetail>();
@@ -174,9 +180,15 @@ public class AddReceiptsToStoreFragmentController {
         list.add(transactionDetail);
         StoreSingleton.getInstance().getHash().put(fowardParam, list);
 
+        saveMoreReceiptInfo(description,list,fowardParam);
 
+    }
 
+    public void saveMoreReceiptInfo(String description, List<InventoryStoreDrugTransactionDetail> list,String fowardParam) {
+
+        InventoryService inventoryService = (InventoryService) Context.getService(InventoryService.class);
         Date date = new Date();
+        int userId = Context.getAuthenticatedUser().getId();
         //	InventoryStore store = inventoryService.getStoreByCollectionRole(new ArrayList<Role>(Context.getAuthenticatedUser().getAllRoles()));;
         List <Role>role=new ArrayList<Role>(Context.getAuthenticatedUser().getAllRoles());
 
@@ -201,44 +213,44 @@ public class AddReceiptsToStoreFragmentController {
         transaction.setCreatedBy(Context.getAuthenticatedUser().getGivenName());
         transaction = inventoryService.saveStoreDrugTransaction(transaction);
 
-
-        if(drugInformationList != null && drugInformationList.size() > 0){
+        if(list != null && list.size() > 0){
             for(int i=0;i< list.size();i++){
-                InventoryStoreDrugTransactionDetail transactionSDetail = list.get(i);
+                InventoryStoreDrugTransactionDetail transactionDetail = list.get(i);
                 //save total first
                 //System.out.println("transactionDetail.getDrug(): "+transactionDetail.getDrug());
                 //System.out.println("transactionDetail.getFormulation(): "+transactionDetail.getFormulation());
-                InventoryStoreDrug storeDrug = inventoryService.getStoreDrug(store.getId(), transactionSDetail.getDrug().getId(), transactionSDetail.getFormulation().getId());
+                InventoryStoreDrug storeDrug = inventoryService.getStoreDrug(store.getId(), transactionDetail.getDrug().getId(), transactionDetail.getFormulation().getId());
                 if(storeDrug == null){
                     storeDrug = new InventoryStoreDrug();
-                    storeDrug.setCurrentQuantity(transactionSDetail.getQuantity());
-                    storeDrug.setReceiptQuantity(transactionSDetail.getQuantity());
-                    storeDrug.setDrug(transactionSDetail.getDrug());
-                    storeDrug.setFormulation(transactionSDetail.getFormulation());
+                    storeDrug.setCurrentQuantity(transactionDetail.getQuantity());
+                    storeDrug.setReceiptQuantity(transactionDetail.getQuantity());
+                    storeDrug.setDrug(transactionDetail.getDrug());
+                    storeDrug.setFormulation(transactionDetail.getFormulation());
                     storeDrug.setStore(store);
                     storeDrug.setStatusIndent(0);
                     storeDrug.setReorderQty(0);
                     storeDrug.setOpeningBalance(0);
-                    storeDrug.setClosingBalance(transactionSDetail.getQuantity());
+                    storeDrug.setClosingBalance(transactionDetail.getQuantity());
                     storeDrug.setStatus(0);
-                    storeDrug.setReorderQty(transactionSDetail.getDrug().getReorderQty());
+                    storeDrug.setReorderQty(transactionDetail.getDrug().getReorderQty());
                     storeDrug = inventoryService.saveStoreDrug(storeDrug);
 
                 }else{
                     storeDrug.setOpeningBalance(storeDrug.getClosingBalance());
-                    storeDrug.setClosingBalance(storeDrug.getClosingBalance()+transactionSDetail.getQuantity());
-                    storeDrug.setCurrentQuantity(storeDrug.getCurrentQuantity() + transactionSDetail.getQuantity());
-                    storeDrug.setReceiptQuantity(transactionSDetail.getQuantity());
-                    storeDrug.setReorderQty(transactionSDetail.getDrug().getReorderQty());
+                    storeDrug.setClosingBalance(storeDrug.getClosingBalance()+transactionDetail.getQuantity());
+                    storeDrug.setCurrentQuantity(storeDrug.getCurrentQuantity() + transactionDetail.getQuantity());
+                    storeDrug.setReceiptQuantity(transactionDetail.getQuantity());
+                    storeDrug.setReorderQty(transactionDetail.getDrug().getReorderQty());
                     storeDrug = inventoryService.saveStoreDrug(storeDrug);
                 }
                 //save transactionDetail
-                transactionSDetail.setOpeningBalance(storeDrug.getOpeningBalance());
-                transactionSDetail.setClosingBalance(storeDrug.getClosingBalance());
-                transactionSDetail.setTransaction(transaction);
-                inventoryService.saveStoreDrugTransactionDetail(transactionSDetail);
+                transactionDetail.setOpeningBalance(storeDrug.getOpeningBalance());
+                transactionDetail.setClosingBalance(storeDrug.getClosingBalance());
+                transactionDetail.setTransaction(transaction);
+                inventoryService.saveStoreDrugTransactionDetail(transactionDetail);
             }
             StoreSingleton.getInstance().getHash().remove(fowardParam);
+
         }
     }
 }

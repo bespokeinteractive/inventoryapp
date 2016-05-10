@@ -62,7 +62,7 @@
 			indentId: indentId
 		}).success(function (data) {
 			if (data.length === 0 && data != null) {
-				jq().toastmessage('showNoticeToast', "No drug found!");
+				jq().toastmessage('showNoticeToast', "No transfers found!");
 				jq('#transferList > tbody > tr').remove();
 				var tbody = jq('#transferList > tbody');
 				var row = '<tr align="center"><td colspan="6">No Drugs found</td></tr>';

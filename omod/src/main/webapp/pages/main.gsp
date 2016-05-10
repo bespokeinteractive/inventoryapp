@@ -244,7 +244,6 @@
 	.summary-div{
 		height: 50px;
 	}
-	
 </style>
 
 <div class="clear"></div>
